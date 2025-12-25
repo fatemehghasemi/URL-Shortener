@@ -1,8 +1,12 @@
 using Scalar.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Shortener.Api.Data;
+using Shortener.Api.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<ShortenUrlService>();
+builder.Services.AddDbContext<ShortenerDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOpenApi();
 
@@ -16,18 +20,20 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => "URL Shortener Service is running.");
 
-app.MapPost("/generate", (GenerateLinkRequest request, ShortenUrlService service) =>
+app.MapGet("/health", async (ShortenerDbContext db) =>
 {
-    return service.CreateShortLink(request);
+    try
+    {
+        await db.Database.CanConnectAsync();
+        return Results.Ok(new { Status = "Healthy", Database = "Connected" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Database connection failed: {ex.Message}");
+    }
 });
 
-app.MapGet("/{shortCode}", (string shortCode, ShortenUrlService service) =>
-{
-    var destination = service.GetDestinationUrl(shortCode);
-    return destination is not null
-        ? Results.Redirect(destination)
-        : Results.NotFound();
-});
-
+app.MapCreateShortUrl();
+app.MapRedirectUrl();
 
 app.Run();
