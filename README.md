@@ -1,7 +1,7 @@
 
 # URL Shortener Service
 
-This is a URL shortener service built with ASP.NET Core Minimal API. It generates compact short links and provides fast redirects to the original URLs.
+High-performance URL shortener built with ASP.NET Core 9 Minimal APIs and Vertical Slice Architecture. Features collision-safe short code generation, comprehensive click analytics with IP detection, PostgreSQL storage, and production-ready Docker deployment. Includes Scalar API documentation and bilingual technical docs
 ---
 
 ## Features
