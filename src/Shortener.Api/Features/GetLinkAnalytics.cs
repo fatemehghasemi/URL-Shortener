@@ -47,13 +47,16 @@ public static class GetLinkAnalytics
         ShortenerDbContext db)
     {
         var link = await db.Links
-            .Include(l => l.ClickLogs)
             .FirstOrDefaultAsync(l => l.ShortCode == shortCode && l.IsActive);
 
         if (link == null)
             return Results.NotFound("Short URL not found");
 
-        var clickLogs = link.ClickLogs.OrderByDescending(c => c.ClickedAt).ToList();
+        var clickLogs = await db.ClickLogs
+            .Where(c => c.LinkId == link.Id)
+            .OrderByDescending(c => c.ClickedAt)
+            .Take(1000) 
+            .ToListAsync();
 
         var recentClicks = clickLogs
             .Take(50)

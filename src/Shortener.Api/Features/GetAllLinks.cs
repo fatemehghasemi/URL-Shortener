@@ -45,7 +45,6 @@ public static class GetAllLinks
         var skip = (page - 1) * pageSize;
 
         var links = await db.Links
-            .Include(l => l.ClickLogs)
             .OrderByDescending(l => l.CreatedAt)
             .Skip(skip)
             .Take(pageSize)
@@ -58,9 +57,11 @@ public static class GetAllLinks
                 l.CreatedAt,
                 l.ExpiresAt,
                 l.IsActive,
-                l.ClickLogs.OrderByDescending(c => c.ClickedAt).FirstOrDefault() != null 
-                    ? l.ClickLogs.OrderByDescending(c => c.ClickedAt).First().ClickedAt 
-                    : null
+                db.ClickLogs
+                    .Where(c => c.LinkId == l.Id)
+                    .OrderByDescending(c => c.ClickedAt)
+                    .Select(c => c.ClickedAt)
+                    .FirstOrDefault()
             ))
             .ToListAsync();
 
