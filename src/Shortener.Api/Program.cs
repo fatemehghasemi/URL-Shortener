@@ -38,5 +38,6 @@ app.MapRedirectUrl();
 app.MapGetLinkAnalytics();
 app.MapGetAnalyticsSummary();
 app.MapGetAllLinks();
+app.MapGetLinkById();
 
 app.Run();
