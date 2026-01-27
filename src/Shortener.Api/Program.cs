@@ -35,5 +35,8 @@ app.MapGet("/health", async (ShortenerDbContext db) =>
 
 app.MapCreateShortUrl();
 app.MapRedirectUrl();
+app.MapGetLinkAnalytics();
+app.MapGetAnalyticsSummary();
+app.MapGetAllLinks();
 
 app.Run();
