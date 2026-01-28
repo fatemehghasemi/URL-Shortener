@@ -40,4 +40,6 @@ app.MapGetAnalyticsSummary();
 app.MapGetAllLinks();
 app.MapGetLinkById();
 app.MapUpdateLink();
+app.MapDeleteLink();
+
 app.Run();
