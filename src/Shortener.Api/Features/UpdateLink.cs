@@ -43,6 +43,9 @@ public static class UpdateLink
 
         if (!string.IsNullOrWhiteSpace(request.OriginalUrl))
         {
+            if (!IsValidUrl(request.OriginalUrl))
+                return Results.BadRequest("Invalid URL format");
+
             link.OriginalUrl = request.OriginalUrl;
             hasChanges = true;
         }
@@ -51,7 +54,7 @@ public static class UpdateLink
         {
             if (request.ExpiresAt.Value <= DateTime.UtcNow)
                 return Results.BadRequest("Expiration date must be in the future");
-            
+
             link.ExpiresAt = request.ExpiresAt.Value;
             hasChanges = true;
         }
@@ -77,5 +80,11 @@ public static class UpdateLink
         );
 
         return Results.Ok(response);
+    }
+
+    private static bool IsValidUrl(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var result) &&
+               (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
     }
 }
