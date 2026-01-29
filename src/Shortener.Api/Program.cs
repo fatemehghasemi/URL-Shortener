@@ -39,5 +39,5 @@ app.MapGetLinkAnalytics();
 app.MapGetAnalyticsSummary();
 app.MapGetAllLinks();
 app.MapGetLinkById();
-
+app.MapUpdateLink();
 app.Run();
