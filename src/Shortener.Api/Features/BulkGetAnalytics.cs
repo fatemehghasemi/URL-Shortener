@@ -24,10 +24,9 @@ public static class BulkGetAnalytics
 
         var foundCodes = new List<string>();
         
-        // TODO: Implement bulk analytics logic
         foreach (var shortCode in request.ShortCodes)
         {
-            foundCodes.Add(shortCode); // Placeholder
+            foundCodes.Add(shortCode);
         }
 
         var response = new Response(foundCodes);

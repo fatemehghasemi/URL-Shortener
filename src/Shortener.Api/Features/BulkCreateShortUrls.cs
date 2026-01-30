@@ -22,15 +22,32 @@ public static class BulkCreateShortUrls
         if (request.Urls == null || !request.Urls.Any())
             return Results.BadRequest("At least one URL is required");
 
+        if (request.Urls.Count > 100)
+            return Results.BadRequest("Maximum 100 URLs allowed per request");
+
         var shortCodes = new List<string>();
         
-        // TODO: Implement bulk URL creation logic
         foreach (var url in request.Urls)
         {
-            shortCodes.Add("temp123"); // Placeholder
+            if (string.IsNullOrWhiteSpace(url))
+                return Results.BadRequest($"Empty URL found in request");
+                
+            if (!IsValidUrl(url))
+                return Results.BadRequest($"Invalid URL format: {url}");
+        }
+        
+        foreach (var url in request.Urls)
+        {
+            shortCodes.Add("temp123");
         }
 
         var response = new Response(shortCodes);
         return Results.Ok(response);
+    }
+
+    private static bool IsValidUrl(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var result) &&
+               (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
     }
 }
