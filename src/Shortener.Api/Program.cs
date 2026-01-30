@@ -41,5 +41,7 @@ app.MapGetAllLinks();
 app.MapGetLinkById();
 app.MapUpdateLink();
 app.MapDeleteLink();
+app.MapBulkCreateShortUrls();
+app.MapBulkGetAnalytics();
 
 app.Run();
