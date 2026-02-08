@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using Shortener.Api.Data;
+using Shortener.Api.Entities;
 
 namespace Shortener.Api.Features;
 
@@ -20,36 +21,67 @@ public static class GenerateQrCode
         IConfiguration config,
         HttpContext context)
     {
-        var link = await db.Links
-            .FirstOrDefaultAsync(l => l.ShortCode == shortCode && l.IsActive);
-
-        if (link == null)
+        var link = await GetValidLinkAsync(db, shortCode);
+        if (link is null)
             return Results.NotFound("Short URL not found");
 
-        if (link.ExpiresAt.HasValue && link.ExpiresAt < DateTime.UtcNow)
-            return Results.NotFound("Short URL has expired");
+        if (IsExpired(link))
+            return Results.StatusCode(StatusCodes.Status410Gone);
 
-        var query = context.Request.Query;
+        var qrSize = GetQrSizeFromQuery(context.Request.Query["size"]);
 
-        var size = int.TryParse(query["size"], out var parsedSize)
-            ? Math.Clamp(parsedSize, 5, 50)
-            : 10;
-
-        var baseUrl = config["AppSettings:BaseUrl"] ?? "http://localhost:5000";
+        var baseUrl = GetBaseUrl(config);
         var shortUrl = $"{baseUrl}/{shortCode}";
 
         try
         {
-            var qrGenerator = new QRCodeGenerator();
-            var qrCodeData = qrGenerator.CreateQrCode(shortUrl, QRCodeGenerator.ECCLevel.Q);
-            var qrCode = new PngByteQRCode(qrCodeData);
-            var qrCodeBytes = qrCode.GetGraphic(size);
-            
-            return Results.File(qrCodeBytes, "image/png", $"qr-code-{shortCode}.png");
+            var qrBytes = GenerateQrCodeBytes(shortUrl, qrSize);
+            return Results.File(qrBytes, "image/png", $"qr-code-{shortCode}.png");
         }
-        catch (Exception ex)
+        catch
         {
-            return Results.Problem($"Failed to generate QR code: {ex.Message}");
+            return Results.Problem("Failed to generate QR code");
         }
+    }
+
+    private static async Task<Link?> GetValidLinkAsync(
+        ShortenerDbContext db,
+        string shortCode)
+    {
+        return await db.Links
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.ShortCode == shortCode && l.IsActive);
+    }
+
+    private static bool IsExpired(Link link)
+    {
+        var now = DateTime.UtcNow;
+        return link.ExpiresAt.HasValue && link.ExpiresAt < now;
+    }
+
+    private static byte[] GenerateQrCodeBytes(string content, int size)
+    {
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+
+        var qrCode = new PngByteQRCode(qrCodeData);
+        return qrCode.GetGraphic(size);
+    }
+
+    private static int GetQrSizeFromQuery(string? sizeParam)
+    {
+        if (!int.TryParse(sizeParam, out var size))
+            return 10;
+
+        return Math.Clamp(size, 5, 50);
+    }
+
+    private static string GetBaseUrl(IConfiguration config)
+    {
+        var baseUrl = config["AppSettings:BaseUrl"];
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            throw new InvalidOperationException("BaseUrl is not configured");
+
+        return baseUrl.TrimEnd('/');
     }
 }
